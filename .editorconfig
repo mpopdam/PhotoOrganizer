@@ -16,6 +16,7 @@ trim_trailing_whitespace = true
 csharp_indent_braces = false
 csharp_new_line_before_members_in_object_initializers = true
 csharp_new_line_before_open_brace = all
+csharp_style_expression_bodied_methods = false:none
 
  # ReSharper properties
 resharper_braces_for_foreach = required
