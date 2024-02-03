@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotoOrganizer.Console", "PhotoOrganizer.Console\PhotoOrganizer.Console.csproj", "{EFCF113C-40A2-4776-BC2D-5277E0498420}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotoOrganizer.Tests", "PhotoOrganizer.Tests\PhotoOrganizer.Tests.csproj", "{C96CBC6F-18E3-49F1-B994-0789AF8BD16D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EFCF113C-40A2-4776-BC2D-5277E0498420}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFCF113C-40A2-4776-BC2D-5277E0498420}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFCF113C-40A2-4776-BC2D-5277E0498420}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFCF113C-40A2-4776-BC2D-5277E0498420}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C96CBC6F-18E3-49F1-B994-0789AF8BD16D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C96CBC6F-18E3-49F1-B994-0789AF8BD16D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C96CBC6F-18E3-49F1-B994-0789AF8BD16D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C96CBC6F-18E3-49F1-B994-0789AF8BD16D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
