@@ -6,10 +6,12 @@ using Progress = PhotoOrganizer.Core.Progress;
 internal class OrganizeCommand
 {
     private readonly IPhotoOrganizer _photoOrganizer;
+    private readonly ISettings _settings;
 
-    public OrganizeCommand(IPhotoOrganizer photoOrganizer)
+    public OrganizeCommand(IPhotoOrganizer photoOrganizer, ISettings settings)
     {
         _photoOrganizer = photoOrganizer;
+        _settings = settings;
     }
 
     public Command Build()
