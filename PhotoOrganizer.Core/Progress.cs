@@ -16,9 +16,9 @@ public class Progress
 
     public int Percentage { get; internal set; }
 
-    public FileMoveResult LastMoveResult { get; internal set; }
+    public FileMoveResult? LastMoveResult { get; internal set; }
 
-    public void Update(FileMoveResult result)
+    public void Update(FileMoveResult? result)
     {
         LastMoveResult = result;
         Current++;

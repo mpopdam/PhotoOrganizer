@@ -10,11 +10,11 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
     {
         [CommandOption("-s|--source")]
         [Description("The folder containing the source files to organize.")]
-        public string Source { get; set; }
+        public string Source { get; set; } = "";
 
         [CommandOption("-t|--target")]
         [Description("The target folder where to move the files.")]
-        public string Target { get; set; }
+        public string Target { get; set; } = "";
     }
 
     private readonly IPhotoOrganizer _photoOrganizer;
@@ -28,9 +28,32 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
-        await Organize(settings.Source, settings.Target);
+        string source = AskSourceIfMissing(settings.Source);
+        string target = AskTargetIfMissing(settings.Target);
+        
+        await Organize(source, target);
 
         return 0;
+    }
+
+    private string AskSourceIfMissing(string? current)
+    {
+        return string.IsNullOrEmpty(current)
+            ? AnsiConsole.Prompt(new TextPrompt<string>("Source folder:")
+                .Validate(s => !string.IsNullOrWhiteSpace(s) && Directory.Exists(s)
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error("The source folder is required and must exist.")))
+            : current;
+    }
+
+    private string AskTargetIfMissing(string? current)
+    {
+        return string.IsNullOrEmpty(current)
+            ? AnsiConsole.Prompt(new TextPrompt<string>("Target folder:")
+                .Validate(s => !string.IsNullOrWhiteSpace(s)
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error("The source folder is required.")))
+            : current;
     }
 
     private async Task Organize(string sourceFolder, string targetFolder)
@@ -47,7 +70,11 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
     {
         string progressIndication = $"{progress.Current.ToString().PadLeft(progress.Total.ToString().Length, '0')} / {progress.Total}";
 
-        FileMoveResult result = progress.LastMoveResult;
+        FileMoveResult? result = progress.LastMoveResult;
+        if (result == null)
+        {
+            return;
+        }
 
         string statusIndication = result.Status switch
         {
@@ -67,5 +94,6 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
         };
 
         AnsiConsole.MarkupLine($"{progressIndication} - {statusIndication} {fileInfo}");
+
     }
 }

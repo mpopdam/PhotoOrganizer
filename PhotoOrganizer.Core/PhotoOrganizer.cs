@@ -22,7 +22,7 @@ internal class PhotoOrganizer : IPhotoOrganizer
 
         foreach (ImageFile imageFile in imageFiles)
         {
-            FileMoveResult result;
+            FileMoveResult? result;
             
             if (imageFile.DateTaken == null)
             {
