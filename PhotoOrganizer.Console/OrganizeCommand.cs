@@ -49,31 +49,6 @@ internal class OrganizeCommand
 
     private async Task Organize(string sourceFolder, string targetFolder)
     {
-        await AnsiConsole.Progress()
-            .Columns(new TaskDescriptionColumn(),
-                new ProgressBarColumn(),
-                new PercentageColumn(),
-                new RemainingTimeColumn(),
-                new SpinnerColumn())
-            .StartAsync(async ctx =>
-            {
-                ProgressTask task = ctx.AddTask("Organize Photos", new ProgressTaskSettings
-                {
-                    AutoStart = false
-                });
-
-                var progressTask = new ProgressAdapter(task);
-                _photoOrganizer.ProgressChanged += (_, progress) =>
-                {
-                    progressTask.Update(progress);
-                };
-
-                await _photoOrganizer.OrganizePhotos(sourceFolder, targetFolder);
-            });
-    }
-
-    private async Task Organize_1(string sourceFolder, string targetFolder)
-    {
         _photoOrganizer.ProgressChanged += (_, progress) =>
         {
             LogProgress(progress);
@@ -106,31 +81,5 @@ internal class OrganizeCommand
         };
 
         AnsiConsole.MarkupLine($"{progressIndication} - {statusIndication} {fileInfo}");
-    }
-    
-    internal class ProgressAdapter
-    {
-        private readonly ProgressTask _task;
-        
-        public ProgressAdapter(ProgressTask task)
-        {
-            _task = task;
-        }
-
-        public void Update(Progress result)
-        {
-            if (result.Current == 1)
-            {
-                _task.MaxValue = result.Total;
-                _task.StartTask();
-            }
-
-            _task.Increment(1);
-
-            if (result.Current == result.Total)
-            {
-                _task.StopTask();
-            }
-        }
     }
 }
