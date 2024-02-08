@@ -1,10 +1,22 @@
-using System.CommandLine;
+using System.ComponentModel;
 using PhotoOrganizer.Core;
 using Spectre.Console;
+using Spectre.Console.Cli;
 using Progress = PhotoOrganizer.Core.Progress;
 
-internal class OrganizeCommand
+internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
 {
+    public sealed class Settings : CommandSettings
+    {
+        [CommandOption("-s|--source")]
+        [Description("The folder containing the source files to organize.")]
+        public string Source { get; set; }
+
+        [CommandOption("-t|--target")]
+        [Description("The target folder where to move the files.")]
+        public string Target { get; set; }
+    }
+
     private readonly IPhotoOrganizer _photoOrganizer;
     private readonly ISettings _settings;
 
@@ -14,37 +26,11 @@ internal class OrganizeCommand
         _settings = settings;
     }
 
-    public Command Build()
+    public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
-        var sourceFolderOption = new Option<string>("--source", "The folder containing the source files to organize")
-        {
-            IsRequired = true
-        };
+        await Organize(settings.Source, settings.Target);
 
-        sourceFolderOption.AddAlias("-s");
-
-        var targetFolderOption = new Option<string>("--target", "The target folder where to move the files")
-        {
-            IsRequired = true
-        };
-
-        targetFolderOption.AddAlias("-t");
-
-        var command = new Command("organize", "Organizes the images in the source folder by their date/time taken")
-        {
-            sourceFolderOption,
-            targetFolderOption
-        };
-
-        command.SetHandler(async context =>
-        {
-            string sourceFolder = context.ParseResult.GetValueForOption(sourceFolderOption) ?? "";
-            string targetFolder = context.ParseResult.GetValueForOption(targetFolderOption) ?? "";
-
-            await Organize(sourceFolder, targetFolder);
-        });
-
-        return command;
+        return 0;
     }
 
     private async Task Organize(string sourceFolder, string targetFolder)
