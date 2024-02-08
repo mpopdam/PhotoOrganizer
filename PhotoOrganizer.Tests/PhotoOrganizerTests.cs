@@ -22,7 +22,7 @@ public class PhotoOrganizerTests
 
         bool eventWasRaised = false;
 
-        var settings = new PhotoOrganizeSettings();
+        var settings = new PhotoOrganizeConfig();
         var organizer = new PhotoOrganizer(fileProvider, fileMover, settings);
         organizer.ProgressChanged += (_, _) => { eventWasRaised = true; };
 
@@ -37,7 +37,7 @@ public class PhotoOrganizerTests
     public async Task When_there_is_an_image_file_in_the_source_folder_it_should_move_the_file_to_the_correct_folder_and_report_progress()
     {
         // Arrange
-        var settings = new PhotoOrganizeSettings
+        var settings = new PhotoOrganizeConfig
         {
             ImageSearchPatterns = ["*.jpg"]
         };

@@ -1,6 +1,6 @@
 namespace PhotoOrganizer.Core;
 
-public interface IPhotoOrganizeSettings
+public interface IPhotoOrganizeConfig
 {
     string? SourceFolder { get; }
 
@@ -13,4 +13,6 @@ public interface IPhotoOrganizeSettings
     void UpdateSourceFolder(string sourceFolder);
     
     void UpdateTargetFolder(string targetFolder);
+
+    string ToJson();
 }

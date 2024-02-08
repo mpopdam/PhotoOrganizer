@@ -1,46 +1,42 @@
 using System.ComponentModel;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using PhotoOrganizer.Console;
 using PhotoOrganizer.Core;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Progress = PhotoOrganizer.Core.Progress;
 
+[Description("Organizes photos from the configured [blue]source[/] folder to the configured [blue]target[/] folder, using their date taken to structure them in folders.")]
 internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
 {
-    private static readonly string s_settingsFilePath = Path.Combine(AppContext.BaseDirectory, "settings.json");
-
     private readonly IPhotoOrganizer _photoOrganizer;
-    private readonly IPhotoOrganizeSettings _photoOrganizeSettings;
+    private readonly IConfigFile _configFile;
 
-    public OrganizeCommand(IPhotoOrganizer photoOrganizer, IPhotoOrganizeSettings photoOrganizeSettings)
+    public OrganizeCommand(IPhotoOrganizer photoOrganizer, IConfigFile configFile)
     {
         _photoOrganizer = photoOrganizer;
-        _photoOrganizeSettings = photoOrganizeSettings;
+        _configFile = configFile;
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings commandSettings)
     {
-        string GetIfMissing(string? commandSettingValue, string? fileSettingValue, Func<string> ask)
-        {
-            return string.IsNullOrEmpty(commandSettingValue)
-                ? fileSettingValue ?? ask()
-                : commandSettingValue;
-        }
-
-        LoadSettings(_photoOrganizeSettings);
+        var config = _configFile.Read();
         
-        string source = GetIfMissing(commandSettings.Source, _photoOrganizeSettings.SourceFolder, AskSource);
-        string target = GetIfMissing(commandSettings.Target, _photoOrganizeSettings.TargetFolder, AskTarget);
+        string source = GetIfMissing(config.SourceFolder, AskSource);
+        string target = GetIfMissing(config.TargetFolder, AskTarget);
 
-        _photoOrganizeSettings.UpdateSourceFolder(source);
-        _photoOrganizeSettings.UpdateTargetFolder(target);
+        config.UpdateSourceFolder(source);
+        config.UpdateTargetFolder(target);
 
-        SaveSettings(_photoOrganizeSettings);
+        _configFile.Save(config);
 
         await Organize(source, target);
 
         return 0;
+    }
+
+    private string GetIfMissing(string? value, Func<string> ask)
+    {
+        return string.IsNullOrEmpty(value) ? ask() : value;
     }
 
     private string AskSource() =>
@@ -96,46 +92,7 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
         AnsiConsole.MarkupLine($"{progressIndication} - {statusIndication} {fileInfo}");
     }
 
-    private void LoadSettings(IPhotoOrganizeSettings photoOrganizeSettings)
-    {
-        if (!File.Exists(s_settingsFilePath))
-        {
-            return;
-        }
-
-        string jsonString = File.ReadAllText(s_settingsFilePath);
-        var settings = JsonSerializer.Deserialize<PhotoOrganizeSettings>(jsonString);
-
-        if (settings == null)
-        {
-            return;
-        }
-        
-        photoOrganizeSettings.UpdateSourceFolder(settings.SourceFolder);
-        photoOrganizeSettings.UpdateTargetFolder(settings.TargetFolder);
-    }
-
-    private void SaveSettings(IPhotoOrganizeSettings settings)
-    {
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
-
-        string jsonString = JsonSerializer.Serialize(settings, options);
-
-        File.WriteAllText(s_settingsFilePath, jsonString);
-    }
-
     public sealed class Settings : CommandSettings
     {
-        [CommandOption("-s|--source")]
-        [Description("The folder containing the source files to organize.")]
-        public string Source { get; set; } = "";
-
-        [CommandOption("-t|--target")]
-        [Description("The target folder where to move the files.")]
-        public string Target { get; set; } = "";
     }
 }
