@@ -3,6 +3,7 @@ using PhotoOrganizer.Console;
 using PhotoOrganizer.Core;
 using Spectre.Console;
 using Spectre.Console.Cli;
+using Spectre.Console.Json;
 using Progress = PhotoOrganizer.Core.Progress;
 
 [Description("Organizes photos from the configured [blue]source[/] folder to the configured [blue]target[/] folder, using their date taken to structure them in folders.")]
@@ -29,7 +30,30 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
 
         _configFile.Save(config);
 
-        await Organize(source, target);
+        int count = await _photoOrganizer.GetSourcePhotoCount(source);
+
+        if (count > 0)
+        {
+            IPhotoOrganizeConfig configFile = _configFile.Read();
+
+            var json = new JsonText(configFile.ToJson());
+
+            AnsiConsole.Write(
+                new Panel(json)
+                    .Header("Settings")
+                    .Collapse()
+                    .RoundedBorder()
+                    .BorderColor(Color.Yellow));
+
+            if (AnsiConsole.Confirm($"About to move [yellow]{count}[/] photos from [blue]{source}[/] to [blue]{target}[/]. Continue?"))
+            {
+                await Organize(source, target);
+            }
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"[yellow]No photos found in {source} to organize.[/]");
+        }
 
         return 0;
     }

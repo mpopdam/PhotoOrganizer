@@ -15,6 +15,13 @@ internal class PhotoOrganizer : IPhotoOrganizer
 
     public event EventHandler<Progress>? ProgressChanged;
 
+    public async Task<int> GetSourcePhotoCount(string sourceFolder)
+    {
+        ImageFile[] imageFiles = await _fileProvider.GetImageFiles(sourceFolder, _photoOrganizeConfig.ImageSearchPatterns);
+        
+        return imageFiles.Length;
+    }
+
     public async Task OrganizePhotos(string sourceFolder, string targetFolder)
     {
         ImageFile[] imageFiles = await _fileProvider.GetImageFiles(sourceFolder, _photoOrganizeConfig.ImageSearchPatterns);
