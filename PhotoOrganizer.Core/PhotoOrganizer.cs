@@ -3,21 +3,21 @@ namespace PhotoOrganizer.Core;
 internal class PhotoOrganizer : IPhotoOrganizer
 {
     private readonly IImageFileMover _fileMover;
-    private readonly ISettings _settings;
+    private readonly IPhotoOrganizeSettings _photoOrganizeSettings;
     private readonly IImageFileProvider _fileProvider;
 
-    public PhotoOrganizer(IImageFileProvider fileProvider, IImageFileMover fileMover, ISettings settings)
+    public PhotoOrganizer(IImageFileProvider fileProvider, IImageFileMover fileMover, IPhotoOrganizeSettings photoOrganizeSettings)
     {
         _fileProvider = fileProvider;
         _fileMover = fileMover;
-        _settings = settings;
+        _photoOrganizeSettings = photoOrganizeSettings;
     }
 
     public event EventHandler<Progress>? ProgressChanged;
 
     public async Task OrganizePhotos(string sourceFolder, string targetFolder)
     {
-        ImageFile[] imageFiles = await _fileProvider.GetImageFiles(sourceFolder, _settings.ImageSearchPatterns);
+        ImageFile[] imageFiles = await _fileProvider.GetImageFiles(sourceFolder, _photoOrganizeSettings.ImageSearchPatterns);
         var progress = new Progress(imageFiles.Length);
 
         foreach (ImageFile imageFile in imageFiles)

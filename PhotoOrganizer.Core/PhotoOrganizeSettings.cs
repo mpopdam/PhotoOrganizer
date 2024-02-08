@@ -1,6 +1,6 @@
 namespace PhotoOrganizer.Core;
 
-internal class Settings : ISettings
+internal class PhotoOrganizeSettings : IPhotoOrganizeSettings
 {
     public string SourceFolder { get; init; } = "C:\\Projects\\PhotoOrganizer\\Source";
 

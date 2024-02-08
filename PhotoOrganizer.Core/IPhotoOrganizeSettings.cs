@@ -1,6 +1,6 @@
 namespace PhotoOrganizer.Core;
 
-public interface ISettings
+public interface IPhotoOrganizeSettings
 {
     string SourceFolder { get; }
 

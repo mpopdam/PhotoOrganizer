@@ -3,12 +3,12 @@ namespace PhotoOrganizer.Core;
 internal class ImageFileMover : IImageFileMover
 {
     private readonly IFileSystem _fileSystem;
-    private readonly ISettings _settings;
+    private readonly IPhotoOrganizeSettings _photoOrganizeSettings;
 
-    public ImageFileMover(IFileSystem fileSystem, ISettings settings)
+    public ImageFileMover(IFileSystem fileSystem, IPhotoOrganizeSettings photoOrganizeSettings)
     {
         _fileSystem = fileSystem;
-        _settings = settings;
+        _photoOrganizeSettings = photoOrganizeSettings;
     }
 
     public async Task<string> Move(ImageFile image, string targetFolder)
@@ -31,7 +31,7 @@ internal class ImageFileMover : IImageFileMover
         string monthFolder = image.DateTaken.Value.Month.ToString("00");
         string destinationFolderPath = Path.Combine(targetFolder, yearFolder, monthFolder);
         
-        string name = image.DateTaken.Value.ToString(_settings.FileFormat);
+        string name = image.DateTaken.Value.ToString(_photoOrganizeSettings.FileFormat);
         string newFileName = $"{name}{Path.GetExtension(image.FilePath)}";
         
         return Path.Combine(destinationFolderPath, newFileName);

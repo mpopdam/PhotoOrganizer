@@ -18,12 +18,12 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
     }
 
     private readonly IPhotoOrganizer _photoOrganizer;
-    private readonly ISettings _settings;
+    private readonly IPhotoOrganizeSettings _photoOrganizeSettings;
 
-    public OrganizeCommand(IPhotoOrganizer photoOrganizer, ISettings settings)
+    public OrganizeCommand(IPhotoOrganizer photoOrganizer, IPhotoOrganizeSettings photoOrganizeSettings)
     {
         _photoOrganizer = photoOrganizer;
-        _settings = settings;
+        _photoOrganizeSettings = photoOrganizeSettings;
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
