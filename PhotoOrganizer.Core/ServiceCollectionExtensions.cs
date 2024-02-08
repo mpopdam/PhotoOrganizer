@@ -6,7 +6,7 @@ public static class ServiceCollectionExtensions
 {
     public static void AddOrganizerServices(this IServiceCollection services)
     {
-        services.AddTransient<IPhotoOrganizeSettings, PhotoOrganizeSettings>();
+        services.AddSingleton<IPhotoOrganizeSettings, PhotoOrganizeSettings>();
         services.AddTransient<IFileSystem, FileSystem>();
         services.AddTransient<IImageMetaDataReader, ImageMetaDataReader>();
         

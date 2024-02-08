@@ -39,10 +39,11 @@ public class PhotoOrganizerTests
         // Arrange
         var settings = new PhotoOrganizeSettings
         {
-            SourceFolder = sourceFolder,
-            TargetFolder = targetFolder,
             ImageSearchPatterns = ["*.jpg"]
         };
+        
+        settings.UpdateSourceFolder(sourceFolder);
+        settings.UpdateTargetFolder(targetFolder);
 
         var image = new ImageFile(Path.Combine(sourceFolder, "someImage.jpg"))
         {

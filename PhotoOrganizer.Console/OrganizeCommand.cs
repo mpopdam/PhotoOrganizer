@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using PhotoOrganizer.Core;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -6,16 +8,7 @@ using Progress = PhotoOrganizer.Core.Progress;
 
 internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
 {
-    public sealed class Settings : CommandSettings
-    {
-        [CommandOption("-s|--source")]
-        [Description("The folder containing the source files to organize.")]
-        public string Source { get; set; } = "";
-
-        [CommandOption("-t|--target")]
-        [Description("The target folder where to move the files.")]
-        public string Target { get; set; } = "";
-    }
+    private static readonly string s_settingsFilePath = Path.Combine(AppContext.BaseDirectory, "settings.json");
 
     private readonly IPhotoOrganizer _photoOrganizer;
     private readonly IPhotoOrganizeSettings _photoOrganizeSettings;
@@ -26,35 +19,41 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
         _photoOrganizeSettings = photoOrganizeSettings;
     }
 
-    public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, Settings commandSettings)
     {
-        string source = AskSourceIfMissing(settings.Source);
-        string target = AskTargetIfMissing(settings.Target);
+        string GetIfMissing(string? commandSettingValue, string? fileSettingValue, Func<string> ask)
+        {
+            return string.IsNullOrEmpty(commandSettingValue)
+                ? fileSettingValue ?? ask()
+                : commandSettingValue;
+        }
+
+        LoadSettings(_photoOrganizeSettings);
         
+        string source = GetIfMissing(commandSettings.Source, _photoOrganizeSettings.SourceFolder, AskSource);
+        string target = GetIfMissing(commandSettings.Target, _photoOrganizeSettings.TargetFolder, AskTarget);
+
+        _photoOrganizeSettings.UpdateSourceFolder(source);
+        _photoOrganizeSettings.UpdateTargetFolder(target);
+
+        SaveSettings(_photoOrganizeSettings);
+
         await Organize(source, target);
 
         return 0;
     }
 
-    private string AskSourceIfMissing(string? current)
-    {
-        return string.IsNullOrEmpty(current)
-            ? AnsiConsole.Prompt(new TextPrompt<string>("Source folder:")
-                .Validate(s => !string.IsNullOrWhiteSpace(s) && Directory.Exists(s)
-                    ? ValidationResult.Success()
-                    : ValidationResult.Error("The source folder is required and must exist.")))
-            : current;
-    }
+    private string AskSource() =>
+        AnsiConsole.Prompt(new TextPrompt<string>("Source folder:")
+            .Validate(s => !string.IsNullOrWhiteSpace(s) && Directory.Exists(s)
+                ? ValidationResult.Success()
+                : ValidationResult.Error("The source folder is required and must exist.")));
 
-    private string AskTargetIfMissing(string? current)
-    {
-        return string.IsNullOrEmpty(current)
-            ? AnsiConsole.Prompt(new TextPrompt<string>("Target folder:")
-                .Validate(s => !string.IsNullOrWhiteSpace(s)
-                    ? ValidationResult.Success()
-                    : ValidationResult.Error("The source folder is required.")))
-            : current;
-    }
+    private string AskTarget() =>
+        AnsiConsole.Prompt(new TextPrompt<string>("Target folder:")
+            .Validate(s => !string.IsNullOrWhiteSpace(s)
+                ? ValidationResult.Success()
+                : ValidationResult.Error("The source folder is required.")));
 
     private async Task Organize(string sourceFolder, string targetFolder)
     {
@@ -68,7 +67,8 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
 
     private static void LogProgress(Progress progress)
     {
-        string progressIndication = $"{progress.Current.ToString().PadLeft(progress.Total.ToString().Length, '0')} / {progress.Total}";
+        string progressIndication =
+            $"{progress.Current.ToString().PadLeft(progress.Total.ToString().Length, '0')} / {progress.Total}";
 
         FileMoveResult? result = progress.LastMoveResult;
         if (result == null)
@@ -94,6 +94,48 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
         };
 
         AnsiConsole.MarkupLine($"{progressIndication} - {statusIndication} {fileInfo}");
+    }
 
+    private void LoadSettings(IPhotoOrganizeSettings photoOrganizeSettings)
+    {
+        if (!File.Exists(s_settingsFilePath))
+        {
+            return;
+        }
+
+        string jsonString = File.ReadAllText(s_settingsFilePath);
+        var settings = JsonSerializer.Deserialize<PhotoOrganizeSettings>(jsonString);
+
+        if (settings == null)
+        {
+            return;
+        }
+        
+        photoOrganizeSettings.UpdateSourceFolder(settings.SourceFolder);
+        photoOrganizeSettings.UpdateTargetFolder(settings.TargetFolder);
+    }
+
+    private void SaveSettings(IPhotoOrganizeSettings settings)
+    {
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
+        string jsonString = JsonSerializer.Serialize(settings, options);
+
+        File.WriteAllText(s_settingsFilePath, jsonString);
+    }
+
+    public sealed class Settings : CommandSettings
+    {
+        [CommandOption("-s|--source")]
+        [Description("The folder containing the source files to organize.")]
+        public string Source { get; set; } = "";
+
+        [CommandOption("-t|--target")]
+        [Description("The target folder where to move the files.")]
+        public string Target { get; set; } = "";
     }
 }
