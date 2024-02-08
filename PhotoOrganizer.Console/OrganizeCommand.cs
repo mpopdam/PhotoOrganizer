@@ -6,11 +6,12 @@ using Spectre.Console.Cli;
 using Spectre.Console.Json;
 using Progress = PhotoOrganizer.Core.Progress;
 
-[Description("Organizes photos from the configured [blue]source[/] folder to the configured [blue]target[/] folder, using their date taken to structure them in folders.")]
+[Description(
+    "Organizes photos from the configured [blue]source[/] folder to the configured [blue]target[/] folder, using their date taken to structure them in folders.")]
 internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
 {
-    private readonly IPhotoOrganizer _photoOrganizer;
     private readonly IConfigFile _configFile;
+    private readonly IPhotoOrganizer _photoOrganizer;
 
     public OrganizeCommand(IPhotoOrganizer photoOrganizer, IConfigFile configFile)
     {
@@ -20,8 +21,8 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings commandSettings)
     {
-        var config = _configFile.Read();
-        
+        IPhotoOrganizeConfig config = _configFile.Read();
+
         string source = GetIfMissing(config.SourceFolder, AskSource);
         string target = GetIfMissing(config.TargetFolder, AskTarget);
 
@@ -30,38 +31,12 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
 
         _configFile.Save(config);
 
-        int count = await _photoOrganizer.GetSourcePhotoCount(source);
-
-        if (count > 0)
-        {
-            IPhotoOrganizeConfig configFile = _configFile.Read();
-
-            var json = new JsonText(configFile.ToJson());
-
-            AnsiConsole.Write(
-                new Panel(json)
-                    .Header("Settings")
-                    .Collapse()
-                    .RoundedBorder()
-                    .BorderColor(Color.Yellow));
-
-            if (AnsiConsole.Confirm($"About to move [yellow]{count}[/] photos from [blue]{source}[/] to [blue]{target}[/]. Continue?"))
-            {
-                await Organize(source, target);
-            }
-        }
-        else
-        {
-            AnsiConsole.MarkupLine($"[yellow]No photos found in {source} to organize.[/]");
-        }
+        await Organize(config);
 
         return 0;
     }
 
-    private string GetIfMissing(string? value, Func<string> ask)
-    {
-        return string.IsNullOrEmpty(value) ? ask() : value;
-    }
+    private string GetIfMissing(string? value, Func<string> ask) => string.IsNullOrEmpty(value) ? ask() : value;
 
     private string AskSource() =>
         AnsiConsole.Prompt(new TextPrompt<string>("Source folder:")
@@ -75,14 +50,60 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
                 ? ValidationResult.Success()
                 : ValidationResult.Error("The source folder is required.")));
 
-    private async Task Organize(string sourceFolder, string targetFolder)
+    private async Task Organize(IPhotoOrganizeConfig config)
     {
-        _photoOrganizer.ProgressChanged += (_, progress) =>
-        {
-            LogProgress(progress);
-        };
+        string source = config.SourceFolder!;
+        string target = config.TargetFolder!;
 
-        await _photoOrganizer.OrganizePhotos(sourceFolder, targetFolder);
+        int count = await _photoOrganizer.GetSourcePhotoCount(source);
+
+        if (count > 0)
+        {
+            var json = new JsonText(config.ToJson());
+
+            AnsiConsole.Write(
+                new Panel(json)
+                    .Header("Settings")
+                    .Collapse()
+                    .RoundedBorder()
+                    .BorderColor(Color.Yellow));
+
+            if (AnsiConsole.Confirm(
+                    $"About to move [yellow]{count}[/] photos from [blue]{source}[/] to [blue]{target}[/]. Continue?"))
+            {
+                int successCount = 0;
+                int failureCount = 0;
+                
+                _photoOrganizer.ProgressChanged += (_, progress) =>
+                {
+                    successCount += progress.LastMoveResult?.Status == FileMoveStatus.Success ? 1 : 0;
+                    failureCount += progress.LastMoveResult?.Status != FileMoveStatus.Success ? 1 : 0;
+                    
+                    LogProgress(progress);
+                };
+
+                await _photoOrganizer.OrganizePhotos(source, target);
+                
+                AnsiConsole.WriteLine();
+                
+                if (failureCount == 0)
+                {
+                    AnsiConsole.MarkupLine($"[green]Moved {successCount} photo(s) successfully.[/]");                
+                }
+                else
+                {
+                    if (successCount > 0)
+                    {
+                        AnsiConsole.MarkupLine($"Moved [green]{successCount}[/] photo(s) successfully.");                
+                    }
+                    AnsiConsole.MarkupLine($"Failed to move [red]{failureCount}[/] photo(s).");
+                }
+            }
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"[yellow]No photos found in {source}.[/]");
+        }
     }
 
     private static void LogProgress(Progress progress)
