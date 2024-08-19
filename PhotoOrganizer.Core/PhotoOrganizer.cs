@@ -3,28 +3,26 @@ namespace PhotoOrganizer.Core;
 internal class PhotoOrganizer : IPhotoOrganizer
 {
     private readonly IImageFileMover _fileMover;
-    private readonly IPhotoOrganizeConfig _photoOrganizeConfig;
     private readonly IImageFileProvider _fileProvider;
 
-    public PhotoOrganizer(IImageFileProvider fileProvider, IImageFileMover fileMover, IPhotoOrganizeConfig photoOrganizeConfig)
+    public PhotoOrganizer(IImageFileProvider fileProvider, IImageFileMover fileMover)
     {
         _fileProvider = fileProvider;
         _fileMover = fileMover;
-        _photoOrganizeConfig = photoOrganizeConfig;
     }
 
     public event EventHandler<Progress>? ProgressChanged;
 
-    public async Task<int> GetSourcePhotoCount(string sourceFolder)
+    public async Task<int> GetSourcePhotoCount(string sourceFolder, string[] imageSearchPatterns)
     {
-        ImageFile[] imageFiles = await _fileProvider.GetImageFiles(sourceFolder, _photoOrganizeConfig.ImageSearchPatterns);
+        ImageFile[] imageFiles = await _fileProvider.GetImageFiles(sourceFolder, imageSearchPatterns);
         
         return imageFiles.Length;
     }
 
-    public async Task OrganizePhotos(string sourceFolder, string targetFolder)
+    public async Task OrganizePhotos(string sourceFolder, string targetFolder, string[] imageSearchPatterns, string fileFormat)
     {
-        ImageFile[] imageFiles = await _fileProvider.GetImageFiles(sourceFolder, _photoOrganizeConfig.ImageSearchPatterns);
+        ImageFile[] imageFiles = await _fileProvider.GetImageFiles(sourceFolder, imageSearchPatterns);
         var progress = new Progress(imageFiles.Length);
 
         foreach (ImageFile imageFile in imageFiles)
@@ -42,7 +40,7 @@ internal class PhotoOrganizer : IPhotoOrganizer
             {
                 try
                 {
-                    string targetPath = await _fileMover.Move(imageFile, targetFolder);
+                    string targetPath = await _fileMover.Move(imageFile, targetFolder, fileFormat);
                     result = new FileMoveResult(imageFile, targetPath);
                 }
                 catch (IOException)

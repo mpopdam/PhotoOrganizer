@@ -55,7 +55,7 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
         string source = config.SourceFolder!;
         string target = config.TargetFolder!;
 
-        int count = await _photoOrganizer.GetSourcePhotoCount(source);
+        int count = await _photoOrganizer.GetSourcePhotoCount(source, config.ImageSearchPatterns);
 
         if (count > 0)
         {
@@ -82,7 +82,7 @@ internal class OrganizeCommand : AsyncCommand<OrganizeCommand.Settings>
                     LogProgress(progress);
                 };
 
-                await _photoOrganizer.OrganizePhotos(source, target);
+                await _photoOrganizer.OrganizePhotos(source, target, config.ImageSearchPatterns, config.FileFormat);
                 
                 AnsiConsole.WriteLine();
                 
