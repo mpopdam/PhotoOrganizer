@@ -1,0 +1,7 @@
+version: 2
+updates:
+  - package-ecosystem: 'nuget'
+    directory: '/'  # Update packages in the root of your repository
+    schedule:
+      interval: "daily" 
+    open-pull-requests-limit: 10 
